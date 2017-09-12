@@ -15,7 +15,10 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
 #include <Wire.h>
+#include "FS.h"
 
 // ----------------------------
 // Additional Libraries - each one of these will need to be installed.
@@ -36,12 +39,28 @@
 // Available on the library manager (Search for "arduino json")
 // https://github.com/squix78/esp8266-oled-ssd1306
 
+#include <WiFiManager.h>
+// For configuring the Wifi credentials without re-programing
+// Availalbe on library manager (WiFiManager)
+// https://github.com/tzapu/WiFiManager
+
+#include <DoubleResetDetector.h>
+// For entering Config mode by pressing reset twice
+// Available on the library manager (Double Reset Detector)
+// https://github.com/datacute/DoubleResetDetector
 
 
+#define HOLDINGS_FILE_NAME "holdings.json"
+
+const char *webpage = 
+#include "webpage.h"
+;
 
 // ----------------------------
 // Configurations - Update these
 // ----------------------------
+
+
 
 char ssid[] = "ssid";       // your network SSID (name)
 char password[] = "pass";  // your network key
@@ -73,6 +92,10 @@ CoinMarketCapApi api(client);
 
 SH1106 display(0x3c, SDA_PIN, SCL_PIN);
 
+DoubleResetDetector drd(10, 0);
+
+ESP8266WebServer server(80);
+
 unsigned long screenChangeDue;
 
 struct Holding {
@@ -85,6 +108,17 @@ struct Holding {
 Holding holdings[MAX_HOLDINGS];
 
 int currentIndex = -1;
+bool doubleResetFlag;
+String ipAddressString;
+
+// Callback notifying us that config mode has been entered
+void onEnterConfigMode (WiFiManager *myWiFiManager) {
+  Serial.println("Entered config mode");
+  Serial.println(WiFi.softAPIP());
+
+  // display conf
+  drd.stop();
+}
 
 void addNewHolding(String tickerId, float amount = 0) {
   int index = getNextFreeHoldingIndex();
@@ -99,44 +133,114 @@ void setup() {
 
   Serial.begin(115200);
 
-  // Initialising the UI will init the display too.
+  // Invoking the DRD library
+  doubleResetFlag = drd.detectDoubleReset();
+
+  // Initialising the display
   display.init();
   display.setFont(ArialMT_Plain_10);
 
+  WiFiManager wifiManager;
+  wifiManager.setAPCallback(onEnterConfigMode);
 
-  // ----------------------------
-  // Holdings - Add your currencies here
-  // ----------------------------
-  // Go to the currencies coinmarketcap.com page
-  // and take the tickerId from the URL (use bitcoin or ethereum as an example)
-  
-  addNewHolding("bitcoin");
-  addNewHolding("dogecoin");
-  addNewHolding("ethereum");
-
-  // ----------------------------
-  // Everything below can be thinkered with if you want but should work as is!
-  // ----------------------------
-
-  // Set WiFi to station mode and disconnect from an AP if it was Previously
-  // connected
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(100);
-
-  // Attempt to connect to Wifi network:
-  Serial.print("Connecting Wifi: ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(500);
+  if (doubleResetFlag) {
+    Serial.println("Double Reset Detected");
+    wifiManager.startConfigPortal("HodlDisplay", "hodltothemoon");
+  } else {
+    Serial.println("No Double Reset Detected");
+    wifiManager.autoConnect("HodlDisplay", "hodltothemoon");
   }
-  Serial.println("");
+
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   IPAddress ip = WiFi.localIP();
   Serial.println(ip);
+  ipAddressString = ip.toString();
+
+  if (MDNS.begin("hodldisplay")) {
+    Serial.println("MDNS Responder Started");
+  }
+  configureWebserver();
+
+  if (!SPIFFS.begin()) {
+    Serial.println("Failed to mount FS");
+    return;
+  }
+
+  int numHoldings = loadHoldings();
+  drd.stop();
+}
+
+String extractHoldingFromRequest(){
+  for (uint8_t i=0; i<server.args(); i++){
+    Serial.println(server.argName(i));
+    if(server.argName(i) == "holding"){
+      Serial.println(server.arg(i));
+      return server.arg(i);
+    }
+  }
+  return "";
+}
+
+void handleAddHolding(){
+
+  String newHolding = extractHoldingFromRequest();
+  if(newHolding != ""){
+    addNewHolding(newHolding);
+    server.send(200, "text/plain", "added");
+  }
+
+  server.send(200, "text/plain", "Failed");
+}
+
+void configureWebserver(){
+  server.on("/", [](){
+    server.send(200, "text/html", webpage);
+  });
+
+  server.on("/add", handleAddHolding);
+
+  server.begin();
+  Serial.println("HTTP Server Started");
+}
+
+int loadHoldings() {
+  File configFile = SPIFFS.open(HOLDINGS_FILE_NAME, "r");
+  if (!configFile) {
+    Serial.println("Failed to open Holdings file");
+    return 0;
+  }
+
+  size_t size = configFile.size();
+  if (size > 1024) {
+    Serial.println("Config file size is too large");
+    return -1;
+  }
+
+  // Allocate a buffer to store contents of the file.
+  std::unique_ptr<char[]> buf(new char[size]);
+
+  configFile.readBytes(buf.get(), size);
+
+  StaticJsonBuffer<500> jsonBuffer;
+  Serial.println(buf.get());
+  JsonArray& holdingsArray = jsonBuffer.parseArray(buf.get());
+
+  if (!holdingsArray.success()) {
+    Serial.println("Failed to parse config file");
+    return -1;
+  }
+
+  for(int i = 0; i < holdingsArray.size(); i++) {
+    holdings[i].tickerId = holdingsArray[i]["tickerId"].as<String>();
+    holdings[i].amount = holdingsArray[i]["amount"].as<float>();
+    holdings[i].inUse = true;
+  }
+  return holdingsArray.size();
+}
+
+void handleRoot() {
+  server.send(200, "text/html");
 }
 
 int getNextFreeHoldingIndex() {
@@ -183,6 +287,14 @@ void displayHolding(int index) {
   display.display();
 }
 
+void displayMessage(String message){
+  display.clear();
+  display.setFont(ArialMT_Plain_10);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.drawStringMaxWidth(0, 0, 128, message);
+  display.display();
+}
+
 String formatCurrency(float price) {
   String formattedCurrency = CURRENCY_SYMBOL;
   int pointsAfterDecimal = 6;
@@ -215,7 +327,13 @@ void loop() {
       } else {
         // Display error?
       }
+    } else {
+      String noFundsMessage = "No funds to display, add them through at: ";
+      noFundsMessage.concat(ipAddressString);
+      displayMessage(noFundsMessage);
     }
     screenChangeDue = timeNow + screenChangeDelay;
   }
+
+  server.handleClient();
 }
