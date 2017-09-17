@@ -21,7 +21,7 @@ It should be wired as followed
 | ------------- |----------------|
 | GND     | G |
 | VCC     | 3V (some boards say 3.3V |
-| SCK     | D5 |
+| SCK (Sometimes SCL)    | D5 |
 | SDA     | D3 |
 
 ---
