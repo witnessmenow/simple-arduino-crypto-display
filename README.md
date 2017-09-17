@@ -1,5 +1,7 @@
 # Simple Arduino Crypto Display
 
+![alt text](https://i.imgur.com/QcoTabI.png "Display")
+
 A display built with an ESP8266 that fetches live currency prices directly from the [CoinMarketCap.com](CoinMarketCap.com) API.
 
 I've tried to make this project as easy to make as possible. There is no soldering and you also do not need to know how to code. In total it should take 10-15 minutes
