@@ -15,8 +15,6 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #include <Wire.h>
 
 // ----------------------------
@@ -38,21 +36,13 @@
 // Available on the library manager (Search for "arduino json")
 // https://github.com/squix78/esp8266-oled-ssd1306
 
-#include <WiFiManager.h>
-// For configuring the Wifi credentials without re-programing
-// Availalbe on library manager (WiFiManager)
-// https://github.com/tzapu/WiFiManager
-
-#include <DoubleResetDetector.h>
-// For entering Config mode by pressing reset twice
-// Available on the library manager (Double Reset Detector)
-// https://github.com/datacute/DoubleResetDetector
-
 
 // ----------------------------
 // Configurations - Update these
 // ----------------------------
 
+char ssid[] = "WiFiNetworkName";       // your network SSID (name)
+char password[] = "password";  // your network key
 
 // Pins based on your wiring
 #define SCL_PIN D5
@@ -81,10 +71,6 @@ CoinMarketCapApi api(client);
 
 SH1106 display(0x3c, SDA_PIN, SCL_PIN);
 
-DoubleResetDetector drd(10, 0);
-
-ESP8266WebServer server(80);
-
 unsigned long screenChangeDue;
 
 struct Holding {
@@ -97,18 +83,7 @@ struct Holding {
 Holding holdings[MAX_HOLDINGS];
 
 int currentIndex = -1;
-bool doubleResetFlag;
 String ipAddressString;
-
-// Callback notifying us that config mode has been entered
-void onEnterConfigMode (WiFiManager *myWiFiManager) {
-  Serial.println("Entered config mode");
-  Serial.println(WiFi.softAPIP());
-  String configModeMessage = "Connect to the \"" + String(myWiFiManager->getConfigPortalSSID());
-  configModeMessage.concat("\" network to enter your WiFi details, they will be saved for next time!");
-  displayMessage(configModeMessage);
-  drd.stop();
-}
 
 void addNewHolding(String tickerId, float amount = 0) {
   int index = getNextFreeHoldingIndex();
@@ -122,9 +97,6 @@ void addNewHolding(String tickerId, float amount = 0) {
 void setup() {
 
   Serial.begin(115200);
-
-  // Invoking the DRD library
-  doubleResetFlag = drd.detectDoubleReset();
 
   // ----------------------------
   // Holdings - Add your currencies here
@@ -144,30 +116,32 @@ void setup() {
   display.init();
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setFont(ArialMT_Plain_16);
-  display.drawString(64, 0, "HODL Display");
+  display.drawString(64, 0, F("HODL Display"));
   display.setFont(ArialMT_Plain_10);
-  display.drawString(64, 18, "By Brian Lough");
+  display.drawString(64, 18, F("By Brian Lough"));
   display.display();
   
 
-  WiFiManager wifiManager;
-  wifiManager.setAPCallback(onEnterConfigMode);
+  // Set WiFi to station mode and disconnect from an AP if it was Previously
+  // connected
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
 
-  if (doubleResetFlag) {
-    Serial.println("Double Reset Detected");
-    wifiManager.startConfigPortal("HodlDisplay", "hodltothemoon");
-  } else {
-    Serial.println("No Double Reset Detected");
-    wifiManager.autoConnect("HodlDisplay", "hodltothemoon");
+  // Attempt to connect to Wifi network:
+  Serial.print("Connecting Wifi: ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
   }
-
+  Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   IPAddress ip = WiFi.localIP();
   Serial.println(ip);
   ipAddressString = ip.toString();
-
-  drd.stop();
 }
 
 int getNextFreeHoldingIndex() {
@@ -206,10 +180,14 @@ void displayHolding(int index) {
   display.setFont(ArialMT_Plain_16);
   display.drawString(64, 0, response.symbol);
   display.setFont(ArialMT_Plain_24);
-  display.drawString(64, 20, formatCurrency(response.price_usd));
+  double price = response.price_currency;
+  if (price == 0) {
+    price = response.price_usd;
+  }
+  display.drawString(64, 20, formatCurrency(price));
   display.setFont(ArialMT_Plain_16);
-//  display.setTextAlignment(TEXT_ALIGN_LEFT);
-//  display.drawString(0, 48, " 1h:" + String(response.percent_change_1h));
+//  display.setTextAlignment(TEXT_ALIGN_CENTER);
+//  display.drawString(64, 48, " 1h:" + String(response.percent_change_1h) + "%");
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.drawString(64, 48, "24h: " + String(response.percent_change_24h) + "%");
 
@@ -254,13 +232,11 @@ void loop() {
       if (loadDataForHolding(currentIndex)) {
         displayHolding(currentIndex);
       } else {
-        // Display error?
+        displayMessage(F("Error loading data."));
       }
     } else {
       displayMessage(F("No funds to display. Edit the setup to add them"));
     }
     screenChangeDue = timeNow + screenChangeDelay;
   }
-
-  server.handleClient();
 }
