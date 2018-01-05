@@ -11,8 +11,8 @@ A display built with an ESP8266 that fetches live currency prices directly from 
 I've tried to make this project as easy to make as possible. There is no soldering and you also do not need to know how to code. In total it should take 10-15 minutes. The total cost is also only about $8 or so.
 
 Crypto Wallets (If you feel like tipping, obviously no need to!)
-ETH: 0x8b4334dc87d2231745772DBaDdC5FE8E705613BE
-BTC: 14pzPrjedUyYb4iqxNA8xCPVKPcDKgeV1x
+* ETH: 0x8b4334dc87d2231745772DBaDdC5FE8E705613BE
+* BTC: 14pzPrjedUyYb4iqxNA8xCPVKPcDKgeV1x
 
 ### Parts Required
 
