@@ -3,6 +3,7 @@
 ![alt text](https://i.imgur.com/QcoTabI.png "Display")
 
 [![Alt text](https://img.youtube.com/vi/2IRsOFaWfho/0.jpg)](https://www.youtube.com/watch?v=2IRsOFaWfho)
+[Check out the youtube video of the project!](https://www.youtube.com/watch?v=2IRsOFaWfho)
 
 A display built with an ESP8266 that fetches live currency prices directly from the [CoinMarketCap.com](CoinMarketCap.com) API.
 
