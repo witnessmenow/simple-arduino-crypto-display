@@ -21,6 +21,10 @@ Crypto Wallets (If you feel like tipping, obviously no need to!)
 * [Female-Female Dupont cables](http://s.click.aliexpress.com/e/2nq7AuR)
 
 
+### 3D printed case from video:
+[Thingiverse](https://www.thingiverse.com/thing:2539435)
+
+
 ### Wiring 
 
 It should be wired as followed
