@@ -23,18 +23,18 @@
 
 #include <CoinMarketCapApi.h>
 // For Integrating with the CoinMarketCap.com API
-// Available on the library manager (Search for "CoinMarket")
+// Available on the library manager (Search for "CoinMarket"): http://librarymanager/All#CoinMarketCapApi
 // https://github.com/witnessmenow/arduino-coinmarketcap-api
 
 #include "SH1106.h"
 // The driver for the OLED display
-// Available on the library manager (Search for "oled ssd1306")
-// https://github.com/squix78/esp8266-oled-ssd1306
+// Available on the library manager (Search for "esp8266 oled driver"): http://librarymanager/All#ESP8266_and_ESP32_Oled_Driver_for_SSD1306_display
+// https://github.com/ThingPulse/esp8266-oled-ssd1306
 
 #include <ArduinoJson.h>
 // Required by the CoinMarketCapApi Library for parsing the response
-// Available on the library manager (Search for "arduino json")
-// https://github.com/squix78/esp8266-oled-ssd1306
+// Available on the library manager (Search for "arduinojson"): http://librarymanager/All#ArduinoJson_efficient_and_elegant_JSON_library
+// https://github.com/bblanchon/ArduinoJson
 
 
 // ----------------------------
