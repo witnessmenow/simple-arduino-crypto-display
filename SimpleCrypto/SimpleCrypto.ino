@@ -32,6 +32,7 @@
 // https://github.com/squix78/esp8266-oled-ssd1306
 
 #include <ArduinoJson.h>
+// !! NOTE !!: When installing this select an older version than V6 from the drop down
 // Required by the CoinMarketCapApi Library for parsing the response
 // Available on the library manager (Search for "arduino json")
 // https://github.com/squix78/esp8266-oled-ssd1306
