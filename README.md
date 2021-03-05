@@ -8,6 +8,8 @@ The code has been updated to work with free [Coingecko API](https://api.coingeck
 
 All of the setup is similar to the previous version, so most of the instructions / video tutorials still apply. The main difference is that you now put your cryptos in the `cryptos.h` file. And the best for last... you can now add the logo to every displayed cryptocurrency! To do that you will need a bitmap of a 32x32 image that you put alongside coin id in `cryptos.h` file.
 
+[COINGECKO ALL COINS ID LIST](https://api.coingecko.com/api/v3/coins/list?include_platform=false)
+
 ***
 
 ![alt text](https://i.imgur.com/QcoTabI.png 'Display')
