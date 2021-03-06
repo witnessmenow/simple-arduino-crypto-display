@@ -6,15 +6,15 @@
 #include <WifiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
-#include "SH1106.h
+#include "SH1106.h"
 #include "cryptos.h"
 
 // ----------------------------
 // Configurations - Update these
 // ----------------------------
 
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char *ssid = "YOUR_WIFI_SSID";
+const char *password = "YOUR_WIFI_PASSWORD";
 unsigned long screenChangeDelay = 10000;
 
 #define SCL_PIN D5
@@ -28,13 +28,15 @@ SH1106 display(0x3c, SDA_PIN, SCL_PIN);
 unsigned long screenChangeDue;
 int cryptosCount = (sizeof(cryptos) / sizeof(cryptos[0]));
 
-void renderSimpleText(String text) {
+void renderSimpleText(String text)
+{
   display.clear();
   display.drawString(64, 18, text);
   display.display();
 }
 
-void renderWelcomeMsg() {
+void renderWelcomeMsg()
+{
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setFont(ArialMT_Plain_16);
   display.drawString(64, 0, F("HODL Display"));
@@ -44,12 +46,13 @@ void renderWelcomeMsg() {
   display.display();
 }
 
-void connect() {
+void connect()
+{
   WiFi.begin(ssid, password);
   String dots[3] = {".", "..", "..."};
   int numberOfDots = 1;
-  
-  while (WiFi.status() != WL_CONNECTED) 
+
+  while (WiFi.status() != WL_CONNECTED)
   {
     display.clear();
     display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -57,63 +60,77 @@ void connect() {
     display.drawString(64, 18, "Connecting to WiFi " + dots[numberOfDots]);
     display.display();
 
-    if (numberOfDots == 3) {
+    if (numberOfDots == 3)
+    {
       numberOfDots = 0;
-    } else {
+    }
+    else
+    {
       numberOfDots++;
     }
 
     delay(300);
   }
 
-   renderSimpleText("Connected.");
+  renderSimpleText("Connected.");
 }
 
-String createApiUrl(String vsCurrency) {
+String createApiUrl(String vsCurrency)
+{
   String cryptosString = "";
 
-  for (int i = 0; i < cryptosCount; i++) {
+  for (int i = 0; i < cryptosCount; i++)
+  {
     cryptosString += cryptos[i].apiName + ",";
   }
 
   return "https://api.coingecko.com/api/v3/coins/markets?vs_currency=" + vsCurrency + "&ids=" + cryptosString + "&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h%2C7d";
 }
 
-int getCryptoIndexById(String id) {
-  for (int i = 0; i < cryptosCount; i++) {
-    if (cryptos[i].apiName == id) return i;
+int getCryptoIndexById(String id)
+{
+  for (int i = 0; i < cryptosCount; i++)
+  {
+    if (cryptos[i].apiName == id)
+      return i;
   }
 }
 
-void downloadData(String vsCurrency) {
-  HTTPClient http;          
+void downloadData(String vsCurrency)
+{
+  HTTPClient http;
   WiFiClientSecure client;
-  client.setInsecure(); 
+  client.setInsecure();
 
   String apiUrl = createApiUrl(vsCurrency);
-  
+
   client.connect(apiUrl, 443);
   http.begin(client, apiUrl);
 
   String response;
-  if (http.GET() == HTTP_CODE_OK) {
-    response = http.getString();  
-  } else {
+  if (http.GET() == HTTP_CODE_OK)
+  {
+    response = http.getString();
+  }
+  else
+  {
     renderSimpleText("Error connecting to API");
     return;
   }
 
   DynamicJsonDocument doc(4000);
   DeserializationError error = deserializeJson(doc, response);
-  
-  if (error) {
+
+  if (error)
+  {
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
     renderSimpleText("JSON deserialization error");
     return;
   }
 
-  for (int i = 0; i < cryptosCount; i++) {
+  for (int i = 0; i < cryptosCount; i++)
+  {
     JsonObject json = doc[i];
     String id = json["id"];
     int cryptoIndex = getCryptoIndexById(id);
@@ -122,41 +139,50 @@ void downloadData(String vsCurrency) {
     double currentPrice = json["current_price"];
     double dayChange = json["price_change_percentage_24h_in_currency"];
     double weekChange = json["price_change_percentage_7d_in_currency"];
-    
+
     cryptos[cryptoIndex].symbol = symbol;
     cryptos[cryptoIndex].priceUsd = currentPrice;
     cryptos[cryptoIndex].dayChange = dayChange;
     cryptos[cryptoIndex].weekChange = weekChange;
   }
- 
 }
 
-String formatCurrency(float price) {
+String formatCurrency(float price)
+{
   int digitsAfterDecimal = 3;
-  
-  if (price >= 1000) {
+
+  if (price >= 1000)
+  {
     digitsAfterDecimal = 0;
-  } else if (price >= 100) {
+  }
+  else if (price >= 100)
+  {
     digitsAfterDecimal = 1;
-  } else if (price >= 1) {
+  }
+  else if (price >= 1)
+  {
     digitsAfterDecimal = 2;
-  } else if (price < 0.001) {
+  }
+  else if (price < 0.001)
+  {
     digitsAfterDecimal = 4;
-  } 
-  
+  }
+
   return String(price, digitsAfterDecimal);
 }
 
-void renderCryptoLogo(Crypto crypto) {  
+void renderCryptoLogo(Crypto crypto)
+{
   int offX = 90;
   int offY = 4;
   int width = 32;
   int height = 32;
-  
-  display.drawXbm(offX, offY, width, height, (uint8_t*)( crypto.bitmap ));
-}  
 
-void renderCrypto(Crypto crypto) {
+  display.drawXbm(offX, offY, width, height, (uint8_t *)(crypto.bitmap));
+}
+
+void renderCrypto(Crypto crypto)
+{
   display.clear();
   renderCryptoLogo(crypto);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -171,10 +197,8 @@ void renderCrypto(Crypto crypto) {
   display.display();
 }
 
-
-
-
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   display.init();
   renderWelcomeMsg();
@@ -182,10 +206,12 @@ void setup() {
   connect();
 }
 
-void loop() {
+void loop()
+{
   downloadData("usd");
-    
-  for (int i = 0; i < cryptosCount; i++) {
+
+  for (int i = 0; i < cryptosCount; i++)
+  {
     renderCrypto(cryptos[i]);
     delay(screenChangeDelay);
   }
