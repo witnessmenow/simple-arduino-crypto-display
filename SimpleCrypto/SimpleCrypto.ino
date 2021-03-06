@@ -100,6 +100,8 @@ void downloadData(String vsCurrency)
 {
   HTTPClient http;
   WiFiClientSecure client;
+
+  http.useHTTP10(true);
   client.setInsecure();
 
   String apiUrl = createApiUrl(vsCurrency);
@@ -107,19 +109,27 @@ void downloadData(String vsCurrency)
   client.connect(apiUrl, 443);
   http.begin(client, apiUrl);
 
-  String response;
-  if (http.GET() == HTTP_CODE_OK)
-  {
-    response = http.getString();
-  }
-  else
+  if (http.GET() != HTTP_CODE_OK)
   {
     renderSimpleText("Error connecting to API");
     return;
   }
 
-  DynamicJsonDocument doc(4000);
-  DeserializationError error = deserializeJson(doc, response);
+  // Create a filter to reduce memory usage
+
+  StaticJsonDocument<512> filter;
+
+  for (int i = 0; i < cryptosCount; i++)
+  {
+    filter[i]["id"] = true;
+    filter[i]["symbol"] = true;
+    filter[i]["current_price"] = true;
+    filter[i]["price_change_percentage_24h_in_currency"] = true;
+    filter[i]["price_change_percentage_7d_in_currency"] = true;
+  }
+
+  DynamicJsonDocument doc(2048);
+  DeserializationError error = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
 
   if (error)
   {
@@ -181,19 +191,42 @@ void renderCryptoLogo(Crypto crypto)
   display.drawXbm(offX, offY, width, height, (uint8_t *)(crypto.bitmap));
 }
 
+String formatPercentageChange(double change)
+{
+  if (change >= 0)
+  {
+    return "+" + String(change) + "%";
+  }
+  else
+  {
+    return String(change) + "%";
+  }
+}
+
 void renderCrypto(Crypto crypto)
 {
   display.clear();
   renderCryptoLogo(crypto);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
+
+  if (crypto.symbol.length() <= 3)
+  {
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(90, 45, crypto.symbol);
+  }
+  else
+  {
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(90, 50, crypto.symbol);
+  }
+
   display.setFont(ArialMT_Plain_16);
-  display.drawString(90, 45, crypto.symbol);
   display.drawString(0, 10, "$");
   display.setFont(ArialMT_Plain_24);
   display.drawString(10, 6, formatCurrency(crypto.priceUsd));
   display.setFont(ArialMT_Plain_10);
-  display.drawString(0, 42, "24h:  " + String(crypto.dayChange) + "%");
-  display.drawString(0, 54, "7d:  " + String(crypto.weekChange) + "%");
+  display.drawString(0, 42, "24h:  " + formatPercentageChange(crypto.dayChange));
+  display.drawString(0, 54, "7d:  " + formatPercentageChange(crypto.weekChange));
   display.display();
 }
 
