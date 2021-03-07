@@ -4,7 +4,7 @@
 
 ![Crypto watch preview](https://user-images.githubusercontent.com/42513971/110157099-16014a00-7de8-11eb-9579-9d23f2c6eccb.JPG)
 
-The code has been updated to work with free [Coingecko API](https://api.coingecko.com/). Besides a few UI tweeks on the display make it even more pleasant to watch.
+The code has been updated to work with free [Coingecko API](https://api.coingecko.com/). Besides that, a few UI tweeks on the display make it even more pleasant to watch.
 
 All of the setup is similar to the previous version, so most of the instructions / video tutorials still apply. The main difference is that you now put your cryptos in the `cryptos.h` file. And the best for last... you can now add the logo to every displayed cryptocurrency! To do that you will need a bitmap of a 32x32 image that you put alongside coin id in `cryptos.h` file.
 
