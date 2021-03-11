@@ -27,6 +27,8 @@ unsigned long screenChangeDelay = 10000;
 SH1106 display(0x3c, SDA_PIN, SCL_PIN);
 unsigned long screenChangeDue;
 int cryptosCount = (sizeof(cryptos) / sizeof(cryptos[0]));
+HTTPClient http;
+WiFiClientSecure client;
 
 void renderSimpleText(String text)
 {
@@ -98,9 +100,6 @@ int getCryptoIndexById(String id)
 
 void downloadData(String vsCurrency)
 {
-  HTTPClient http;
-  WiFiClientSecure client;
-
   http.useHTTP10(true);
   client.setInsecure();
 
