@@ -25,7 +25,6 @@ unsigned long screenChangeDelay = 10000;
 // ----------------------------
 
 SH1106 display(0x3c, SDA_PIN, SCL_PIN);
-unsigned long screenChangeDue;
 int cryptosCount = (sizeof(cryptos) / sizeof(cryptos[0]));
 HTTPClient http;
 WiFiClientSecure client;
