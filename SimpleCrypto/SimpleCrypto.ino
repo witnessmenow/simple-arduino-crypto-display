@@ -116,7 +116,7 @@ void downloadData(String vsCurrency)
 
   // Create a filter to reduce memory usage
 
-  StaticJsonDocument<512> filter;
+  StaticJsonDocument<1024> filter;
 
   for (int i = 0; i < cryptosCount; i++)
   {
@@ -127,7 +127,7 @@ void downloadData(String vsCurrency)
     filter[i]["price_change_percentage_7d_in_currency"] = true;
   }
 
-  DynamicJsonDocument doc(2048);
+  DynamicJsonDocument doc(8192);
   DeserializationError error = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
 
   if (error)
