@@ -10,6 +10,17 @@ All of the setup is similar to the previous version, so most of the instructions
 
 [COINGECKO ALL COINS ID LIST](https://api.coingecko.com/api/v3/coins/list?include_platform=false)
 
+### Getting bitmap of your crypto's logo
+
+There are several ways to convert a regular image into a bitmap, that you can use in this project. The general recipe for creating a logo that displays nicely I use is:
+
+1. Download coin image 
+2. Open it in GIMP
+3. Scale it to 32x32
+4. Change mode to indexed (it will make the picture black and white, everything that is black will be displayed on the screen)
+5. Save it as .xbm file
+6. Open .xbm file in text editor and copy the bit-array to your cryptos.h
+
 ***
 
 ![alt text](https://i.imgur.com/QcoTabI.png 'Display')
