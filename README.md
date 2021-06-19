@@ -10,6 +10,12 @@ All of the setup is similar to the previous version, so most of the instructions
 
 [COINGECKO ALL COINS ID LIST](https://api.coingecko.com/api/v3/coins/list?include_platform=false)
 
+### Tired of black and white?
+
+I ported this project to a coloful LCD screen, updated the UI and added more features. If you like this project, you will certainly love this one as well. 
+
+[Have a look at my bitcoin-watch project](https://github.com/piotrwawrzyn/bitcoin-watch)!
+
 ### Getting bitmap of your crypto's logo
 
 There are several ways to convert a regular image into a bitmap, that you can use in this project. The general recipe for creating a logo that displays nicely I use is:
